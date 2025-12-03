@@ -1,98 +1,141 @@
-// 現在表示中のPDFとページ・検索キーワード
-let currentPdf = "shuken-book-shousai-ishou.pdf";
-let currentPage = 1;
+// =============================
+//  集研BOOK 詳細図集 ビューア
+//  ・PDF切り替え（意匠 / 構造）
+//  ・ページジャンプ
+//  ・キーワード検索
+// =============================
+
+// 状態
+let currentPdf    = "shuken-book-shousai-ishou.pdf"; // 初期は意匠
+let currentPage   = 1;
 let currentSearch = "";
 
-// 要素取得
-const pdfFrame   = document.getElementById("pdfFrame");
-const pageInput  = document.getElementById("pageInput");
+// 要素取得（nullチェック付き）
+const pdfFrame    = document.getElementById("pdfFrame");
+const pageInput   = document.getElementById("pageInput");
 const pageJumpBtn = document.getElementById("pageJumpBtn");
 const searchInput = document.getElementById("searchInput");
 const searchBtn   = document.getElementById("searchBtn");
 const pdfButtons  = document.querySelectorAll(".pdf-btn");
+const installBtn  = document.getElementById("installBtn");
 
-// 共通：iframe の src を更新
-function refreshPdf() {
-  let fragment = `#page=${currentPage}&zoom=page-width`;
-  if (currentSearch) {
-    // ChromeなどのPDFビューアは search パラメータで検索できる
-    fragment += `&search=${encodeURIComponent(currentSearch)}`;
-  }
-  pdfFrame.src = `${currentPdf}${fragment}`;
+// もし必須要素が取れていなければ、何もせず終わる
+if (!pdfFrame) {
+  console.error("pdfFrame が見つかりません。index.html の id を確認してください。");
 }
 
-// --- PDF切り替え ---
-pdfButtons.forEach(btn => {
+// -------------------------
+// iframe の src を更新する共通関数
+// -------------------------
+function refreshPdf() {
+  if (!pdfFrame) return;
+  // #page= と search= を組み立て
+  let fragment = `#page=${currentPage}&zoom=page-width`;
+  if (currentSearch) {
+    fragment += `&search=${encodeURIComponent(currentSearch)}`;
+  }
+
+  const url = `${currentPdf}${fragment}`;
+  console.log("PDF更新:", url);
+  pdfFrame.setAttribute("src", url);
+}
+
+// -------------------------
+// PDF切り替え
+// -------------------------
+pdfButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    currentPdf = btn.dataset.file;
-    currentPage = 1;           // PDF切り替え時は1ページ目へ
-    pageInput.value = currentPage;
+    const file = btn.dataset.file;
+    if (!file) return;
+
+    currentPdf  = file;
+    currentPage = 1;
+    if (pageInput) pageInput.value = String(currentPage);
+
     refreshPdf();
   });
 });
 
-// --- ページジャンプ ---
+// -------------------------
+// ページジャンプ
+// -------------------------
 function setPdfPage(page) {
   if (!page || page <= 0) return;
   currentPage = page;
   refreshPdf();
 }
 
-pageJumpBtn.addEventListener("click", () => {
-  const page = Number(pageInput.value);
-  setPdfPage(page);
-});
-
-// Enterキーでページジャンプ
-pageInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+if (pageJumpBtn && pageInput) {
+  pageJumpBtn.addEventListener("click", () => {
     const page = Number(pageInput.value);
     setPdfPage(page);
-  }
-});
+  });
 
-// --- キーワード検索 ---
+  // Enterキーでもジャンプ
+  pageInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const page = Number(pageInput.value);
+      setPdfPage(page);
+    }
+  });
+
+  // 初期値は1ページ目
+  pageInput.value = String(currentPage);
+}
+
+// -------------------------
+// キーワード検索
+// -------------------------
 function doSearch() {
+  if (!searchInput) return;
   const term = searchInput.value.trim();
-  currentSearch = term; // 空文字なら検索クリア
-  // 検索時は1ページ目からにしておく
-  if (term) currentPage = 1;
-  pageInput.value = currentPage;
+  currentSearch = term;      // 空文字なら検索解除
+  if (term) currentPage = 1; // 検索時は1ページ目から
+  if (pageInput) pageInput.value = String(currentPage);
   refreshPdf();
 }
 
-searchBtn.addEventListener("click", () => {
-  doSearch();
-});
-
-// Enterキーで検索
-searchInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+if (searchBtn && searchInput) {
+  searchBtn.addEventListener("click", () => {
     doSearch();
-  }
-});
+  });
 
-// --- PWA インストール処理 ---
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      doSearch();
+    }
+  });
+}
+
+// -------------------------
+// PWA インストール処理
+// -------------------------
 let deferredPrompt = null;
-const installBtn = document.getElementById("installBtn");
 
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.style.display = "inline-block";
+  if (installBtn) {
+    installBtn.style.display = "inline-block";
+  }
 });
 
-installBtn.addEventListener("click", async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  installBtn.style.display = "none";
-});
+if (installBtn) {
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.style.display = "none";
+  });
+}
 
-// --- Service Worker 登録 ---
+// -------------------------
+// Service Worker 登録
+// -------------------------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js");
+    navigator.serviceWorker.register("service-worker.js")
+      .catch(err => console.error("SW registration failed:", err));
   });
 }
