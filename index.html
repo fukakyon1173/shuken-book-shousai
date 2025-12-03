@@ -150,4 +150,24 @@
     <!-- ページジャンプ -->
     <div class="page-jump">
       ページ：
-      <input type="number" id="page
+      <input type="number" id="pageInput" min="1" />
+      <button id="pageJumpBtn" class="btn">ジャンプ</button>
+    </div>
+
+    <!-- キーワード検索 -->
+    <div class="search-area">
+      キーワード：
+      <input type="text" id="searchInput" placeholder="例：スラブ、梁、階段" />
+      <button id="searchBtn" class="btn">検索</button>
+      <span class="search-note">※ブラウザのPDFビューアの検索機能を利用します</span>
+    </div>
+  </div>
+
+  <iframe
+    id="pdfFrame"
+    src="shuken-book-shousai-ishou.pdf#page=1&zoom=page-width">
+  </iframe>
+
+  <script src="app.js"></script>
+</body>
+</html>
