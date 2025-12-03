@@ -1,50 +1,67 @@
 // =============================
-//  集研BOOK 詳細図集 ビューア
-//  ・PDF切り替え（意匠 / 構造）
-//  ・ページジャンプ
-//  ・キーワード検索 → 左に結果リスト表示
+// 集研BOOK 詳細図集ビューア（5PDF版）
+// ・PDF切替：目次 / 意匠（外部・内部・建具） / 構造
+// ・ページ指定ジャンプ（別タブで開く）
+// ・左の検索結果からジャンプ
 // =============================
 
 // ---- 1. 検索インデックス ----
-// ここに「キーワード → PDFファイル＆ページ」を登録していきます。
-// page の値は実際の PDF を見ながら好きなように変えてください。
+// ★page の値は実際の PDF を見ながら自由に修正してください。
 const SEARCH_INDEX = [
   {
-    keyword: ["スラブ", "slab"],
-    label: "スラブ配筋標準（意匠）",
-    pdf: "shuken-book-shousai-ishou.pdf",
-    page: 7   // ← 実際のページに合わせて変更
+    keyword: ["目次", "mokuji"],
+    label: "全体目次",
+    pdf: "shuken-book-shousai-mokuji.pdf",
+    page: 1
   },
   {
-    keyword: ["梁", "ばり"],
-    label: "梁配筋（意匠）",
-    pdf: "shuken-book-shousai-ishou.pdf",
-    page: 15  // ← 実際のページに合わせて変更
+    keyword: ["外部", "外部仕上", "バルコニー", "屋根"],
+    label: "外部仕上げ（意匠・外部）",
+    pdf: "shuken-book-shousai-ishou-gaibu.pdf",
+    page: 1
+  },
+  {
+    keyword: ["内部", "内部仕上", "天井", "壁", "床"],
+    label: "内部仕上げ（意匠・内部）",
+    pdf: "shuken-book-shousai-ishou-naibu.pdf",
+    page: 1
+  },
+  {
+    keyword: ["建具", "窓", "ドア", "サッシ"],
+    label: "建具詳細（意匠・建具）",
+    pdf: "shuken-book-shousai-ishou-tategu.pdf",
+    page: 1
+  },
+  {
+    keyword: ["構造", "基礎", "フーチング"],
+    label: "基礎・フーチング（構造）",
+    pdf: "shuken-book-shousai-kouzou.pdf",
+    page: 1
+  },
+  {
+    keyword: ["スラブ"],
+    label: "スラブ配筋標準（構造）",
+    pdf: "shuken-book-shousai-kouzou.pdf",
+    page: 7
   },
   {
     keyword: ["階段"],
     label: "階段配筋標準（構造）",
     pdf: "shuken-book-shousai-kouzou.pdf",
-    page: 30  // ← 実際のページに合わせて変更
-  },
-  {
-    keyword: ["基礎", "フーチング"],
-    label: "基礎・フーチング詳細（構造）",
-    pdf: "shuken-book-shousai-kouzou.pdf",
-    page: 5   // ← 実際のページに合わせて変更
+    page: 15
   }
-  // ★必要に応じてどんどん追加してOK
+  // ★必要に応じてここにどんどん追加してOK
 ];
 
 // ---- 2. 状態 ----
-let currentPdf  = "shuken-book-shousai-ishou.pdf"; // 初期は意匠
+let currentPdf  = "shuken-book-shousai-mokuji.pdf"; // 初期：目次
 let currentPage = 1;
 
 // ---- 3. 要素取得 ----
-const pdfFrame    = document.getElementById("pdfFrame");
-const pageInput   = document.getElementById("pageInput");
-const pageJumpBtn = document.getElementById("pageJumpBtn");
-const pdfButtons  = document.querySelectorAll(".pdf-btn");
+const pdfButtons        = document.querySelectorAll(".pdf-btn");
+const currentFileLabel  = document.getElementById("currentFileLabel");
+const pageInput         = document.getElementById("pageInput");
+const pageJumpBtn       = document.getElementById("pageJumpBtn");
 
 const searchInput = document.getElementById("searchInput");
 const searchBtn   = document.getElementById("searchBtn");
@@ -54,16 +71,18 @@ const tagButtons  = document.querySelectorAll(".tag-btn");
 
 const installBtn  = document.getElementById("installBtn");
 
-// ---- 4. PDF表示更新関数 ----
-function refreshPdf() {
-  if (!pdfFrame) return;
-  const fragment = `#page=${currentPage}&zoom=page-width`;
-  const url = `${currentPdf}${fragment}`;
-  console.log("PDF更新:", url);
-  pdfFrame.setAttribute("src", url);
+// ---- 4. 共通：PDF をページ付きで開く（別タブ） ----
+function openPdfAtPage(pdfFile, page) {
+  if (!page || page <= 0) page = 1;
+
+  const url = `${pdfFile}#page=${page}`;
+  console.log("PDFオープン:", url);
+
+  // spec-viewer と同様：別タブで開く
+  window.open(url, "_blank");
 }
 
-// ---- 5. PDF切り替え ----
+// ---- 5. PDFボタンの見た目更新 ----
 function updatePdfButtonsActive() {
   pdfButtons.forEach(btn => {
     if (btn.dataset.file === currentPdf) {
@@ -72,9 +91,24 @@ function updatePdfButtonsActive() {
       btn.classList.remove("pdf-btn-active");
     }
   });
+
+  if (currentFileLabel) {
+    currentFileLabel.textContent =
+      `現在：${getPdfLabel(currentPdf)}（${currentPdf}）`;
+  }
 }
 
-pdfButtons.forEach((btn) => {
+function getPdfLabel(pdfFile) {
+  if (pdfFile.includes("mokuji")) return "目次";
+  if (pdfFile.includes("gaibu"))  return "意匠：外部";
+  if (pdfFile.includes("naibu"))  return "意匠：内部";
+  if (pdfFile.includes("tategu")) return "意匠：建具";
+  if (pdfFile.includes("kouzou")) return "構造";
+  return pdfFile;
+}
+
+// ---- 6. PDF切替ボタン ----
+pdfButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const file = btn.dataset.file;
     if (!file) return;
@@ -82,21 +116,17 @@ pdfButtons.forEach((btn) => {
     currentPage = 1;
     if (pageInput) pageInput.value = String(currentPage);
     updatePdfButtonsActive();
-    refreshPdf();
   });
 });
 
 updatePdfButtonsActive();
-if (pageInput) {
-  pageInput.value = String(currentPage);
-}
+if (pageInput) pageInput.value = String(currentPage);
 
-// ---- 6. ページジャンプ ----
+// ---- 7. ページジャンプ ----
 function setPdfPage(page) {
-  if (!page || page <= 0) return;
-  currentPage = page;
+  currentPage = page || 1;
   if (pageInput) pageInput.value = String(currentPage);
-  refreshPdf();
+  openPdfAtPage(currentPdf, currentPage);
 }
 
 if (pageJumpBtn && pageInput) {
@@ -113,7 +143,7 @@ if (pageJumpBtn && pageInput) {
   });
 }
 
-// ---- 7. 検索ロジック ----
+// ---- 8. 検索ロジック ----
 function searchIndex(term) {
   const q = term.trim().toLowerCase();
   if (!q) return [];
@@ -141,7 +171,7 @@ function renderResults(results, term) {
 
   searchInfo.textContent = `「${term}」の検索結果：${results.length}件`;
 
-  results.forEach((item) => {
+  results.forEach(item => {
     const li = document.createElement("li");
     li.className = "result-item";
 
@@ -151,7 +181,13 @@ function renderResults(results, term) {
 
     const meta = document.createElement("div");
     meta.className = "result-meta";
-    const kind = item.pdf.includes("ishou") ? "意匠" : "構造";
+    const kind =
+      item.pdf.includes("mokuji") ? "目次" :
+      item.pdf.includes("gaibu")  ? "意匠：外部" :
+      item.pdf.includes("naibu")  ? "意匠：内部" :
+      item.pdf.includes("tategu") ? "意匠：建具" :
+      item.pdf.includes("kouzou") ? "構造" : "PDF";
+
     meta.textContent = `${kind} / p.${item.page}`;
 
     li.appendChild(title);
@@ -162,7 +198,7 @@ function renderResults(results, term) {
       currentPage = item.page;
       if (pageInput) pageInput.value = String(currentPage);
       updatePdfButtonsActive();
-      refreshPdf();
+      openPdfAtPage(currentPdf, currentPage);
     });
 
     resultList.appendChild(li);
@@ -176,7 +212,7 @@ function doSearch() {
   renderResults(results, term);
 }
 
-// 検索ボタン
+// 検索ボタン・Enterキー
 if (searchBtn && searchInput) {
   searchBtn.addEventListener("click", () => {
     doSearch();
@@ -200,7 +236,7 @@ tagButtons.forEach(btn => {
   });
 });
 
-// ---- 8. PWA インストール処理 ----
+// ---- 9. PWA インストール処理 ----
 let deferredPrompt = null;
 
 window.addEventListener("beforeinstallprompt", (e) => {
@@ -221,7 +257,7 @@ if (installBtn) {
   });
 }
 
-// ---- 9. Service Worker 登録 ----
+// ---- 10. Service Worker 登録 ----
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js")
