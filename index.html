@@ -13,10 +13,17 @@
 
   <link rel="stylesheet" href="style.css" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "ヒラギノ角ゴ ProN", "メイリオ", sans-serif;
       background: #f5f5f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
@@ -26,6 +33,7 @@
       padding: 10px 14px;
       background: #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      z-index: 10;
     }
 
     .title-area {
@@ -50,17 +58,6 @@
       color: #444;
     }
 
-    .section {
-      padding: 10px;
-    }
-
-    .pdf-select {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
     .btn {
       border: none;
       border-radius: 20px;
@@ -83,17 +80,127 @@
       cursor: default;
     }
 
-    iframe {
-      width: 100%;
-      height: calc(100vh - 230px);
-      border: none;
-      border-radius: 8px;
-      background: #ccc;
+    /* メインレイアウト：左サイドバー + 右ビューア */
+    .main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
     }
 
-    .page-jump,
-    .search-area {
-      margin-top: 8px;
+    .sidebar {
+      width: 280px;
+      max-width: 40%;
+      background: #fafafa;
+      border-right: 1px solid #ddd;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+    }
+
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    #searchInput {
+      flex: 1;
+      min-width: 80px;
+      padding: 4px 6px;
+      font-size: 13px;
+    }
+
+    .search-note {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .search-info {
+      font-size: 11px;
+      color: #555;
+    }
+
+    .result-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .result-item {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .result-item:hover {
+      border-color: #1976d2;
+      box-shadow: 0 0 0 1px rgba(25,118,210,0.2);
+    }
+
+    .result-title {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .result-meta {
+      font-size: 11px;
+      color: #555;
+    }
+
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag-btn {
+      border: 1px solid #bbb;
+      background: #fff;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .tag-btn:hover {
+      border-color: #1976d2;
+    }
+
+    .viewer-area {
+      flex: 1;
+      min-width: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pdf-select {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .pdf-btn-active {
+      background: #0d47a1;
+    }
+
+    .page-jump {
       display: flex;
       gap: 6px;
       align-items: center;
@@ -107,22 +214,34 @@
       font-size: 14px;
     }
 
-    #searchInput {
+    .viewer-frame {
       flex: 1;
-      min-width: 120px;
-      max-width: 260px;
-      padding: 4px 6px;
-      font-size: 14px;
+      min-height: 0;
     }
 
-    .search-note {
-      font-size: 11px;
-      color: #666;
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 8px;
+      background: #ccc;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 220px;
+      }
     }
 
     @media (max-width: 600px) {
-      iframe {
-        height: calc(100vh - 260px);
+      .main {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        max-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
       }
     }
   </style>
@@ -140,33 +259,50 @@
     <button id="installBtn" class="btn-outline btn">アプリ追加</button>
   </header>
 
-  <div class="section">
-    <!-- PDF切り替え -->
-    <div class="pdf-select">
-      <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou.pdf">意匠図集</button>
-      <button class="btn pdf-btn" data-file="shuken-book-shousai-kouzou.pdf">構造図集</button>
-    </div>
+  <div class="main">
+    <!-- 左：検索・検索結果 -->
+    <aside class="sidebar">
+      <div class="sidebar-title">キーワード検索</div>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="例：スラブ、梁、階段 など" />
+        <button id="searchBtn" class="btn" style="font-size:12px;padding:4px 10px;">検索</button>
+      </div>
+      <div class="search-note">※あらかじめ登録したキーワードから PDF とページにジャンプします。</div>
 
-    <!-- ページジャンプ -->
-    <div class="page-jump">
-      ページ：
-      <input type="number" id="pageInput" min="1" />
-      <button id="pageJumpBtn" class="btn">ジャンプ</button>
-    </div>
+      <div class="sidebar-title" style="margin-top:4px;">よく使うキーワード</div>
+      <div class="quick-tags">
+        <button class="tag-btn" data-tag="スラブ">スラブ</button>
+        <button class="tag-btn" data-tag="梁">梁</button>
+        <button class="tag-btn" data-tag="階段">階段</button>
+        <button class="tag-btn" data-tag="基礎">基礎</button>
+      </div>
 
-    <!-- キーワード検索 -->
-    <div class="search-area">
-      キーワード：
-      <input type="text" id="searchInput" placeholder="例：スラブ、梁、階段" />
-      <button id="searchBtn" class="btn">検索</button>
-      <span class="search-note">※ブラウザのPDFビューアの検索機能を利用します</span>
-    </div>
+      <div class="sidebar-title" style="margin-top:8px;">検索結果</div>
+      <div id="searchInfo" class="search-info">キーワードを入力して検索してください。</div>
+      <ul id="resultList" class="result-list"></ul>
+    </aside>
+
+    <!-- 右：PDFビューア -->
+    <main class="viewer-area">
+      <div class="pdf-select">
+        <button class="btn pdf-btn pdf-btn-active" data-file="shuken-book-shousai-ishou.pdf">意匠図集</button>
+        <button class="btn pdf-btn" data-file="shuken-book-shousai-kouzou.pdf">構造図集</button>
+      </div>
+
+      <div class="page-jump">
+        ページ：
+        <input type="number" id="pageInput" min="1" />
+        <button id="pageJumpBtn" class="btn">ジャンプ</button>
+      </div>
+
+      <div class="viewer-frame">
+        <iframe
+          id="pdfFrame"
+          src="shuken-book-shousai-ishou.pdf#page=1&zoom=page-width">
+        </iframe>
+      </div>
+    </main>
   </div>
-
-  <iframe
-    id="pdfFrame"
-    src="shuken-book-shousai-ishou.pdf#page=1&zoom=page-width">
-  </iframe>
 
   <script src="app.js"></script>
 </body>
