@@ -1,54 +1,55 @@
-const pdfFile = "shuken-book-2023.pdf";
+// 現在表示中のPDF
+let currentPdf = "shuken-book-shousai-ishou.pdf";
+
+// 要素取得
 const pdfFrame = document.getElementById("pdfFrame");
 const pageInput = document.getElementById("pageInput");
 const pageJumpBtn = document.getElementById("pageJumpBtn");
-const sectionButtons = document.querySelectorAll(".section-buttons .btn");
 
-function setPdfPage(page) {
-  if (!page || page <= 0) return;
-  // ブラウザのPDFビューアに page パラメータを渡す
-  pdfFrame.src = `${pdfFile}#page=${page}&zoom=page-width`;
-}
+// PDF切り替えボタン
+const pdfButtons = document.querySelectorAll(".pdf-btn");
 
-// セクションボタンでジャンプ
-sectionButtons.forEach((btn) => {
+// PDF切り替え
+pdfButtons.forEach(btn => {
   btn.addEventListener("click", () => {
-    const page = Number(btn.dataset.page);
-    pageInput.value = page;
-    setPdfPage(page);
+    currentPdf = btn.dataset.file;
+    pdfFrame.src = `${currentPdf}#page=1&zoom=page-width`;
+    pageInput.value = 1;
   });
 });
 
-// ページ番号指定でジャンプ
+// ページジャンプ
+function setPdfPage(page) {
+  if (!page || page <= 0) return;
+  pdfFrame.src = `${currentPdf}#page=${page}&zoom=page-width`;
+}
+
 pageJumpBtn.addEventListener("click", () => {
   const page = Number(pageInput.value);
   setPdfPage(page);
 });
 
-// -------- PWA: インストールボタン制御 --------
+// PWA インストール処理
 let deferredPrompt = null;
 const installBtn = document.getElementById("installBtn");
 
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.style.display = "inline-flex";
+  installBtn.style.display = "inline-block";
 });
 
 installBtn.addEventListener("click", async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
-  const result = await deferredPrompt.userChoice;
-  console.log("install result:", result.outcome);
+  await deferredPrompt.userChoice;
   deferredPrompt = null;
   installBtn.style.display = "none";
 });
 
-// -------- Service Worker 登録 --------
+// Service Worker 登録
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js").catch((err) => {
-      console.error("SW registration failed:", err);
-    });
+    navigator.serviceWorker.register("service-worker.js");
   });
 }
