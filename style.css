@@ -1,0 +1,134 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, "ヒラギノ角ゴ ProN", "メイリオ", sans-serif;
+  background: #f5f5f5;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+header.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+h1 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 11px;
+  margin: 0;
+  color: #555;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.controls {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.section-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.page-jump {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+#pageInput {
+  width: 64px;
+}
+
+.viewer {
+  flex: 1;
+  min-height: 0;
+}
+
+.viewer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  background: #999;
+}
+
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: #777;
+  padding: 4px 0 6px;
+}
+
+/* ボタン共通 */
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #1976d2;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn-outline {
+  background: #fff;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+}
+
+/* スマホ向け調整 */
+@media (max-width: 600px) {
+  header.app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .viewer iframe {
+    height: calc(100vh - 200px);
+  }
+}

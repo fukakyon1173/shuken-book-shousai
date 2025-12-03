@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>集研 BOOK（詳細図集）ビューア</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-title">
+      <img src="icon-192.png" alt="集研BOOKロゴ" class="app-logo" />
+      <div>
+        <h1>集研 BOOK（詳細図集）</h1>
+        <p class="subtitle">機構住宅標準詳細設計図集2023 ビューア</p>
+      </div>
+    </div>
+    <button id="installBtn" class="btn btn-outline">アプリとして追加</button>
+  </header>
+
+  <main>
+    <section class="controls">
+      <!-- 必要に応じてボタンを増やす -->
+      <div class="section-buttons">
+        <button class="btn" data-page="1">表紙／凡例</button>
+        <button class="btn" data-page="10">基礎まわり</button>
+        <button class="btn" data-page="30">外壁まわり</button>
+        <button class="btn" data-page="60">開口部</button>
+        <!-- 実際のページ番号に合わせて変更してください -->
+      </div>
+
+      <div class="page-jump">
+        <label>
+          ページ指定：
+          <input type="number" id="pageInput" min="1" />
+        </label>
+        <button id="pageJumpBtn" class="btn">ジャンプ</button>
+      </div>
+    </section>
+
+    <section class="viewer">
+      <!-- iframe で PDF を表示 -->
+      <iframe
+        id="pdfFrame"
+        title="集研BOOK PDF"
+        src="shuken-book-2023.pdf#page=1&zoom=page-width"
+      ></iframe>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 集研BOOK 詳細図集ビューア</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
