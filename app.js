@@ -1,8 +1,9 @@
 // =============================
 // 集研BOOK 詳細図集ビューア（5PDF版）
 // ・PDF切替：目次 / 意匠（外部・内部・建具） / 構造
-// ・ページ指定ジャンプ（別タブで開く）
+// ・ページ指定ジャンプ（同じタブで開く）
 // ・左の検索結果からジャンプ
+// ・登録なしキーワードは pdf.js で全文検索
 // =============================
 
 // ---- 1. 検索インデックス ----
@@ -53,6 +54,15 @@ const SEARCH_INDEX = [
   // ★必要に応じてここにどんどん追加してOK
 ];
 
+// 全文検索対象のPDF一覧
+const PDF_FILES = [
+  { file: "shuken-book-shousai-mokuji.pdf",        label: "目次" },
+  { file: "shuken-book-shousai-ishou-gaibu.pdf",   label: "意匠：外部" },
+  { file: "shuken-book-shousai-ishou-naibu.pdf",   label: "意匠：内部" },
+  { file: "shuken-book-shousai-ishou-tategu.pdf",  label: "意匠：建具" },
+  { file: "shuken-book-shousai-kouzou.pdf",        label: "構造" }
+];
+
 // ---- 2. 状態 ----
 let currentPdf  = "shuken-book-shousai-mokuji.pdf"; // 初期：目次
 let currentPage = 1;
@@ -71,18 +81,26 @@ const tagButtons  = document.querySelectorAll(".tag-btn");
 
 const installBtn  = document.getElementById("installBtn");
 
-// ---- 4. 共通：PDF をページ付きで開く（別タブ） ----
+// ---- 4. 共通：PDF をページ付きで開く（同じタブ） ----
 function openPdfAtPage(pdfFile, page) {
   if (!page || page <= 0) page = 1;
-
   const url = `${pdfFile}#page=${page}`;
   console.log("PDFオープン:", url);
 
-  // spec-viewer と同様：別タブで開く
-  window.open(url, "_blank");
+  // 同じタブで開く → ブラウザの「戻る」で検索画面に戻れる
+  window.location.href = url;
 }
 
 // ---- 5. PDFボタンの見た目更新 ----
+function getPdfLabel(pdfFile) {
+  if (pdfFile.includes("mokuji")) return "目次";
+  if (pdfFile.includes("gaibu"))  return "意匠：外部";
+  if (pdfFile.includes("naibu"))  return "意匠：内部";
+  if (pdfFile.includes("tategu")) return "意匠：建具";
+  if (pdfFile.includes("kouzou")) return "構造";
+  return pdfFile;
+}
+
 function updatePdfButtonsActive() {
   pdfButtons.forEach(btn => {
     if (btn.dataset.file === currentPdf) {
@@ -96,15 +114,6 @@ function updatePdfButtonsActive() {
     currentFileLabel.textContent =
       `現在：${getPdfLabel(currentPdf)}（${currentPdf}）`;
   }
-}
-
-function getPdfLabel(pdfFile) {
-  if (pdfFile.includes("mokuji")) return "目次";
-  if (pdfFile.includes("gaibu"))  return "意匠：外部";
-  if (pdfFile.includes("naibu"))  return "意匠：内部";
-  if (pdfFile.includes("tategu")) return "意匠：建具";
-  if (pdfFile.includes("kouzou")) return "構造";
-  return pdfFile;
 }
 
 // ---- 6. PDF切替ボタン ----
@@ -143,7 +152,58 @@ if (pageJumpBtn && pageInput) {
   });
 }
 
-// ---- 8. 検索ロジック ----
+// ---- 8. pdf.js 用キャッシュ＆全文検索 ----
+const pdfDocCache = {}; // { file名: PDFDocument }
+
+async function loadPdfDocument(file) {
+  if (pdfDocCache[file]) return pdfDocCache[file];
+
+  const loadingTask = pdfjsLib.getDocument(file);
+  const pdfDoc = await loadingTask.promise;
+  pdfDocCache[file] = pdfDoc;
+  return pdfDoc;
+}
+
+// 指定キーワードを、全PDFから探して最初に見つかったページを開く
+async function searchAllPdfsAndOpen(term) {
+  const q = term.trim().toLowerCase();
+  if (!q) return;
+
+  if (searchInfo) {
+    searchInfo.textContent = `「${term}」をPDF全文から検索中…`;
+  }
+
+  for (const pdfInfo of PDF_FILES) {
+    const pdfDoc = await loadPdfDocument(pdfInfo.file);
+    const total = pdfDoc.numPages;
+
+    for (let pageNum = 1; pageNum <= total; pageNum++) {
+      const page = await pdfDoc.getPage(pageNum);
+      const content = await page.getTextContent();
+      const text = content.items.map(item => item.str).join(" ");
+
+      if (text.toLowerCase().includes(q)) {
+        // 見つかったら、そのPDFのそのページを開く
+        if (searchInfo) {
+          searchInfo.textContent =
+            `「${term}」は ${pdfInfo.label} の p.${pageNum} で見つかりました。`;
+        }
+        currentPdf  = pdfInfo.file;
+        currentPage = pageNum;
+        if (pageInput) pageInput.value = String(currentPage);
+        updatePdfButtonsActive();
+        openPdfAtPage(currentPdf, currentPage);
+        return;
+      }
+    }
+  }
+
+  if (searchInfo) {
+    searchInfo.textContent = `「${term}」はPDF内で見つかりませんでした。`;
+  }
+}
+
+// ---- 9. 検索ロジック（登録済み＋全文検索） ----
 function searchIndex(term) {
   const q = term.trim().toLowerCase();
   if (!q) return [];
@@ -205,11 +265,22 @@ function renderResults(results, term) {
   });
 }
 
-function doSearch() {
+async function doSearch() {
   if (!searchInput) return;
-  const term = searchInput.value;
-  const results = searchIndex(term);
-  renderResults(results, term);
+  const term = searchInput.value.trim();
+  if (!term) {
+    renderResults([], term);
+    return;
+  }
+
+  // 1) まず登録済みインデックスから検索
+  const indexResults = searchIndex(term);
+  renderResults(indexResults, term);
+
+  // 2) 登録済みでヒットがなかったら、全文検索に切り替え
+  if (indexResults.length === 0) {
+    await searchAllPdfsAndOpen(term);
+  }
 }
 
 // 検索ボタン・Enterキー
@@ -236,7 +307,7 @@ tagButtons.forEach(btn => {
   });
 });
 
-// ---- 9. PWA インストール処理 ----
+// ---- 10. PWA インストール処理 ----
 let deferredPrompt = null;
 
 window.addEventListener("beforeinstallprompt", (e) => {
@@ -257,7 +328,7 @@ if (installBtn) {
   });
 }
 
-// ---- 10. Service Worker 登録 ----
+// ---- 11. Service Worker 登録 ----
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js")

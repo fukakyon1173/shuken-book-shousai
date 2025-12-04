@@ -11,12 +11,8 @@
   <link rel="icon" type="image/png" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
 
-  <link rel="stylesheet" href="style.css" />
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "ヒラギノ角ゴ ProN", "メイリオ", sans-serif;
@@ -41,22 +37,9 @@
       align-items: center;
       gap: 10px;
     }
-
-    .title-area img {
-      width: 45px;
-      height: 45px;
-      border-radius: 10px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 17px;
-    }
-
-    .subtitle {
-      font-size: 12px;
-      color: #444;
-    }
+    .title-area img { width: 45px; height: 45px; border-radius: 10px; }
+    h1 { margin: 0; font-size: 17px; }
+    .subtitle { font-size: 12px; color: #444; }
 
     .btn {
       border: none;
@@ -68,25 +51,10 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    .btn-outline { background: #fff; color: #1976d2; border: 1px solid #1976d2; }
 
-    .btn-outline {
-      background: #fff;
-      color: #1976d2;
-      border: 1px solid #1976d2;
-    }
-
-    .btn:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
-    /* レイアウト：左サイドバー + 右操作エリア */
-    .main {
-      flex: 1;
-      display: flex;
-      min-height: 0;
-    }
-
+    /* レイアウト（左：検索 / 右：操作） */
+    .main { flex: 1; display: flex; min-height: 0; }
     .sidebar {
       width: 280px;
       max-width: 40%;
@@ -99,146 +67,46 @@
       overflow-y: auto;
     }
 
-    .sidebar-title {
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .search-row {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    #searchInput {
-      flex: 1;
-      min-width: 80px;
-      padding: 4px 6px;
-      font-size: 13px;
-    }
-
-    .search-note {
-      font-size: 11px;
-      color: #666;
-    }
-
-    .search-info {
-      font-size: 11px;
-      color: #555;
-    }
+    .sidebar-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .search-row { display: flex; gap: 6px; align-items: center; }
+    #searchInput { flex: 1; padding: 4px 6px; font-size: 13px; }
 
     .result-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 4px;
     }
-
     .result-item {
-      padding: 6px 8px;
-      border-radius: 6px;
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      cursor: pointer;
-      font-size: 12px;
+      padding: 6px 8px; background: #fff; border-radius: 6px;
+      border: 1px solid #e0e0e0; cursor: pointer; font-size: 12px;
     }
-
     .result-item:hover {
-      border-color: #1976d2;
-      box-shadow: 0 0 0 1px rgba(25,118,210,0.2);
+      border-color: #1976d2; box-shadow: 0 0 0 1px rgba(25,118,210,0.2);
     }
 
-    .result-title {
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .result-meta {
-      font-size: 11px;
-      color: #555;
-    }
-
-    .quick-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 4px; }
     .tag-btn {
-      border: 1px solid #bbb;
-      background: #fff;
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 11px;
-      cursor: pointer;
-    }
-
-    .tag-btn:hover {
-      border-color: #1976d2;
+      border: 1px solid #bbb; background: #fff;
+      border-radius: 999px; padding: 2px 8px;
+      font-size: 11px; cursor: pointer;
     }
 
     .viewer-area {
-      flex: 1;
-      min-width: 0;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex: 1; min-width: 0; padding: 10px;
+      display: flex; flex-direction: column; gap: 10px;
     }
 
-    .pdf-select {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
+    .pdf-select { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pdf-btn-active { background: #0d47a1; }
 
-    .pdf-btn-active {
-      background: #0d47a1;
-    }
+    .page-jump { display: flex; gap: 6px; align-items: center; }
+    #pageInput { width: 80px; padding: 4px; font-size: 14px; }
 
-    .page-jump {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      font-size: 13px;
-      flex-wrap: wrap;
-    }
-
-    #pageInput {
-      width: 80px;
-      padding: 4px;
-      font-size: 14px;
-    }
-
-    .hint {
-      font-size: 11px;
-      color: #666;
-    }
-
-    .current-file {
-      font-size: 12px;
-      color: #333;
-    }
-
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 230px;
-      }
-    }
+    .current-file { font-size: 12px; color: #333; }
+    .hint { font-size: 11px; color: #666; }
 
     @media (max-width: 600px) {
-      .main {
-        flex-direction: column;
-      }
-      .sidebar {
-        width: 100%;
-        max-width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #ddd;
-      }
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; max-width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
     }
   </style>
 </head>
@@ -256,15 +124,13 @@
   </header>
 
   <div class="main">
-    <!-- 左：検索・検索結果 -->
+    <!-- 左：検索パネル -->
     <aside class="sidebar">
       <div class="sidebar-title">キーワード検索</div>
+
       <div class="search-row">
-        <input type="text" id="searchInput" placeholder="例：スラブ、階段、建具 など" />
+        <input type="text" id="searchInput" placeholder="例：スラブ、階段、建具…" />
         <button id="searchBtn" class="btn" style="font-size:12px;padding:4px 10px;">検索</button>
-      </div>
-      <div class="search-note">
-        ※登録済みのキーワードから、対応する PDF とページを開きます。
       </div>
 
       <div class="sidebar-title" style="margin-top:4px;">よく使うキーワード</div>
@@ -283,22 +149,18 @@
       <ul id="resultList" class="result-list"></ul>
     </aside>
 
-    <!-- 右：PDFファイル選択＆ページジャンプ -->
+    <!-- 右：ファイル選択＋ページジャンプ -->
     <main class="viewer-area">
       <div>
         <div class="sidebar-title">閲覧する PDF を選択</div>
         <div class="pdf-select">
-          <button class="btn pdf-btn pdf-btn-active"
-                  data-file="shuken-book-shousai-mokuji.pdf">目次</button>
-          <button class="btn pdf-btn"
-                  data-file="shuken-book-shousai-ishou-gaibu.pdf">意匠：外部</button>
-          <button class="btn pdf-btn"
-                  data-file="shuken-book-shousai-ishou-naibu.pdf">意匠：内部</button>
-          <button class="btn pdf-btn"
-                  data-file="shuken-book-shousai-ishou-tategu.pdf">意匠：建具</button>
-          <button class="btn pdf-btn"
-                  data-file="shuken-book-shousai-kouzou.pdf">構造</button>
+          <button class="btn pdf-btn pdf-btn-active" data-file="shuken-book-shousai-mokuji.pdf">目次</button>
+          <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou-gaibu.pdf">意匠：外部</button>
+          <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou-naibu.pdf">意匠：内部</button>
+          <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou-tategu.pdf">意匠：建具</button>
+          <button class="btn pdf-btn" data-file="shuken-book-shousai-kouzou.pdf">構造</button>
         </div>
+
         <div id="currentFileLabel" class="current-file" style="margin-top:4px;">
           現在：目次（shuken-book-shousai-mokuji.pdf）
         </div>
@@ -311,14 +173,23 @@
           <input type="number" id="pageInput" min="1" />
           <button id="pageJumpBtn" class="btn">このページを開く</button>
         </div>
+
         <div class="hint">
-          ※ボタンを押すと、選択中の PDF が <strong>別タブ</strong> で指定ページから開きます。  
-          　PDFを閉じるかブラウザの「戻る」で、この画面に戻れます。
+          ※ボタンを押すと、選択中の PDF が <strong>同じタブ</strong> で指定ページから開きます。<br>
+          　PDF閲覧後にブラウザの「戻る」でこの画面に戻れます。
         </div>
       </div>
     </main>
   </div>
 
+  <!-- pdf.js（全文検索用） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  </script>
+
+  <!-- アプリ本体 -->
   <script src="app.js"></script>
 </body>
 </html>
