@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>集研BOOK PDF Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      background: #222;
+      color: #fff;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .back-btn {
+      background: #1976d2;
+      border: none;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .file-label {
+      font-size: 12px;
+      opacity: 0.8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #444;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <button class="back-btn" onclick="goBack()">← 戻る</button>
+    <div class="file-label" id="fileName"></div>
+  </div>
+
+  <iframe id="pdfFrame"></iframe>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const file = params.get("file");
+    const page = params.get("page") || 1;
+
+    const viewer = document.getElementById("pdfFrame");
+    viewer.src = `${file}#page=${page}`;
+
+    document.getElementById("fileName").textContent =
+      decodeURIComponent(file) + " / p." + page;
+
+    function goBack() {
+      // 一覧画面（index.html）に戻る
+      window.location.href = "./";
+    }
+  </script>
+</body>
+</html>

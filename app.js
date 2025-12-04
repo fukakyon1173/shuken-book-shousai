@@ -1,66 +1,17 @@
 // =============================
-// 集研BOOK 詳細図集ビューア（5PDF版）
+// 集研BOOK 詳細図集ビューア
 // ・PDF切替：目次 / 意匠（外部・内部・建具） / 構造
-// ・ページ指定ジャンプ（同じタブで開く）
-// ・左の検索結果からジャンプ
-// ・登録なしキーワードは pdf.js で全文検索
+// ・ページ指定ジャンプ（viewer.html 経由）
+// ・全文検索：左側にヒット件数分、抜粋（数行）を表示
 // =============================
 
-// ---- 1. 検索インデックス ----
-// ★page の値は実際の PDF を見ながら自由に修正してください。
-const SEARCH_INDEX = [
-  {
-    keyword: ["目次", "mokuji"],
-    label: "全体目次",
-    pdf: "shuken-book-shousai-mokuji.pdf",
-    page: 1
-  },
-  {
-    keyword: ["外部", "外部仕上", "バルコニー", "屋根"],
-    label: "外部仕上げ（意匠・外部）",
-    pdf: "shuken-book-shousai-ishou-gaibu.pdf",
-    page: 1
-  },
-  {
-    keyword: ["内部", "内部仕上", "天井", "壁", "床"],
-    label: "内部仕上げ（意匠・内部）",
-    pdf: "shuken-book-shousai-ishou-naibu.pdf",
-    page: 1
-  },
-  {
-    keyword: ["建具", "窓", "ドア", "サッシ"],
-    label: "建具詳細（意匠・建具）",
-    pdf: "shuken-book-shousai-ishou-tategu.pdf",
-    page: 1
-  },
-  {
-    keyword: ["構造", "基礎", "フーチング"],
-    label: "基礎・フーチング（構造）",
-    pdf: "shuken-book-shousai-kouzou.pdf",
-    page: 1
-  },
-  {
-    keyword: ["スラブ"],
-    label: "スラブ配筋標準（構造）",
-    pdf: "shuken-book-shousai-kouzou.pdf",
-    page: 7
-  },
-  {
-    keyword: ["階段"],
-    label: "階段配筋標準（構造）",
-    pdf: "shuken-book-shousai-kouzou.pdf",
-    page: 15
-  }
-  // ★必要に応じてここにどんどん追加してOK
-];
-
-// 全文検索対象のPDF一覧
+// ---- 1. 検索対象PDFのリスト ----
 const PDF_FILES = [
-  { file: "shuken-book-shousai-mokuji.pdf",        label: "目次" },
-  { file: "shuken-book-shousai-ishou-gaibu.pdf",   label: "意匠：外部" },
-  { file: "shuken-book-shousai-ishou-naibu.pdf",   label: "意匠：内部" },
-  { file: "shuken-book-shousai-ishou-tategu.pdf",  label: "意匠：建具" },
-  { file: "shuken-book-shousai-kouzou.pdf",        label: "構造" }
+  { file: "shuken-book-shousai-mokuji.pdf",       label: "目次" },
+  { file: "shuken-book-shousai-ishou-gaibu.pdf",  label: "意匠：外部" },
+  { file: "shuken-book-shousai-ishou-naibu.pdf",  label: "意匠：内部" },
+  { file: "shuken-book-shousai-ishou-tategu.pdf", label: "意匠：建具" },
+  { file: "shuken-book-shousai-kouzou.pdf",       label: "構造" }
 ];
 
 // ---- 2. 状態 ----
@@ -81,24 +32,18 @@ const tagButtons  = document.querySelectorAll(".tag-btn");
 
 const installBtn  = document.getElementById("installBtn");
 
-// ---- 4. 共通：PDF をページ付きで開く（同じタブ） ----
+// ---- 4. PDFを viewer.html 経由で開く ----
 function openPdfAtPage(pdfFile, page) {
   if (!page || page <= 0) page = 1;
-  const url = `${pdfFile}#page=${page}`;
-  console.log("PDFオープン:", url);
-
-  // 同じタブで開く → ブラウザの「戻る」で検索画面に戻れる
+  const url = `viewer.html?file=${encodeURIComponent(pdfFile)}&page=${page}`;
+  console.log("open:", url);
   window.location.href = url;
 }
 
-// ---- 5. PDFボタンの見た目更新 ----
+// ---- 5. PDFボタン表示更新 ----
 function getPdfLabel(pdfFile) {
-  if (pdfFile.includes("mokuji")) return "目次";
-  if (pdfFile.includes("gaibu"))  return "意匠：外部";
-  if (pdfFile.includes("naibu"))  return "意匠：内部";
-  if (pdfFile.includes("tategu")) return "意匠：建具";
-  if (pdfFile.includes("kouzou")) return "構造";
-  return pdfFile;
+  const info = PDF_FILES.find(p => p.file === pdfFile);
+  return info ? info.label : pdfFile;
 }
 
 function updatePdfButtonsActive() {
@@ -131,7 +76,7 @@ pdfButtons.forEach(btn => {
 updatePdfButtonsActive();
 if (pageInput) pageInput.value = String(currentPage);
 
-// ---- 7. ページジャンプ ----
+// ---- 7. ページ指定ジャンプ ----
 function setPdfPage(page) {
   currentPage = page || 1;
   if (pageInput) pageInput.value = String(currentPage);
@@ -152,26 +97,29 @@ if (pageJumpBtn && pageInput) {
   });
 }
 
-// ---- 8. pdf.js 用キャッシュ＆全文検索 ----
+// ---- 8. pdf.js 用キャッシュ ----
 const pdfDocCache = {}; // { file名: PDFDocument }
 
 async function loadPdfDocument(file) {
   if (pdfDocCache[file]) return pdfDocCache[file];
-
   const loadingTask = pdfjsLib.getDocument(file);
   const pdfDoc = await loadingTask.promise;
   pdfDocCache[file] = pdfDoc;
   return pdfDoc;
 }
 
-// 指定キーワードを、全PDFから探して最初に見つかったページを開く
-async function searchAllPdfsAndOpen(term) {
+// ---- 9. 全文検索してスニペットを作る ----
+// 戻り値: [{ pdf, label, page, snippet }, ...]
+async function searchAllPdfsWithSnippets(term) {
   const q = term.trim().toLowerCase();
-  if (!q) return;
+  const results = [];
+  if (!q) return results;
 
   if (searchInfo) {
     searchInfo.textContent = `「${term}」をPDF全文から検索中…`;
   }
+
+  const maxResults = 50; // 安全のため上限
 
   for (const pdfInfo of PDF_FILES) {
     const pdfDoc = await loadPdfDocument(pdfInfo.file);
@@ -182,38 +130,30 @@ async function searchAllPdfsAndOpen(term) {
       const content = await page.getTextContent();
       const text = content.items.map(item => item.str).join(" ");
 
-      if (text.toLowerCase().includes(q)) {
-        // 見つかったら、そのPDFのそのページを開く
-        if (searchInfo) {
-          searchInfo.textContent =
-            `「${term}」は ${pdfInfo.label} の p.${pageNum} で見つかりました。`;
-        }
-        currentPdf  = pdfInfo.file;
-        currentPage = pageNum;
-        if (pageInput) pageInput.value = String(currentPage);
-        updatePdfButtonsActive();
-        openPdfAtPage(currentPdf, currentPage);
-        return;
+      const lowered = text.toLowerCase();
+      const idx = lowered.indexOf(q);
+      if (idx !== -1) {
+        const CONTEXT = 40; // 前後何文字持ってくるか
+        const start = Math.max(0, idx - CONTEXT);
+        const end   = Math.min(text.length, idx + term.length + CONTEXT);
+        const rawSnippet = text.slice(start, end).replace(/\s+/g, " ");
+
+        results.push({
+          pdf: pdfInfo.file,
+          label: pdfInfo.label,
+          page: pageNum,
+          snippet: rawSnippet
+        });
+
+        if (results.length >= maxResults) return results;
       }
     }
   }
 
-  if (searchInfo) {
-    searchInfo.textContent = `「${term}」はPDF内で見つかりませんでした。`;
-  }
+  return results;
 }
 
-// ---- 9. 検索ロジック（登録済み＋全文検索） ----
-function searchIndex(term) {
-  const q = term.trim().toLowerCase();
-  if (!q) return [];
-  return SEARCH_INDEX.filter(item => {
-    const labelMatch = item.label.toLowerCase().includes(q);
-    const keywordMatch = item.keyword.some(k => k.toLowerCase().includes(q));
-    return labelMatch || keywordMatch;
-  });
-}
-
+// ---- 10. 検索結果の描画 ----
 function renderResults(results, term) {
   if (!resultList || !searchInfo) return;
 
@@ -225,7 +165,7 @@ function renderResults(results, term) {
   }
 
   if (results.length === 0) {
-    searchInfo.textContent = `「${term}」に一致する登録項目はありません。`;
+    searchInfo.textContent = `「${term}」はPDF内で見つかりませんでした。`;
     return;
   }
 
@@ -241,17 +181,15 @@ function renderResults(results, term) {
 
     const meta = document.createElement("div");
     meta.className = "result-meta";
-    const kind =
-      item.pdf.includes("mokuji") ? "目次" :
-      item.pdf.includes("gaibu")  ? "意匠：外部" :
-      item.pdf.includes("naibu")  ? "意匠：内部" :
-      item.pdf.includes("tategu") ? "意匠：建具" :
-      item.pdf.includes("kouzou") ? "構造" : "PDF";
+    meta.textContent = `p.${item.page} / ${item.pdf}`;
 
-    meta.textContent = `${kind} / p.${item.page}`;
+    const snippet = document.createElement("div");
+    snippet.className = "result-snippet";
+    snippet.textContent = item.snippet;
 
     li.appendChild(title);
     li.appendChild(meta);
+    li.appendChild(snippet);
 
     li.addEventListener("click", () => {
       currentPdf  = item.pdf;
@@ -265,6 +203,7 @@ function renderResults(results, term) {
   });
 }
 
+// ---- 11. 検索実行 ----
 async function doSearch() {
   if (!searchInput) return;
   const term = searchInput.value.trim();
@@ -273,14 +212,8 @@ async function doSearch() {
     return;
   }
 
-  // 1) まず登録済みインデックスから検索
-  const indexResults = searchIndex(term);
-  renderResults(indexResults, term);
-
-  // 2) 登録済みでヒットがなかったら、全文検索に切り替え
-  if (indexResults.length === 0) {
-    await searchAllPdfsAndOpen(term);
-  }
+  const results = await searchAllPdfsWithSnippets(term);
+  renderResults(results, term);
 }
 
 // 検索ボタン・Enterキー
@@ -307,7 +240,7 @@ tagButtons.forEach(btn => {
   });
 });
 
-// ---- 10. PWA インストール処理 ----
+// ---- 12. PWA インストール処理 ----
 let deferredPrompt = null;
 
 window.addEventListener("beforeinstallprompt", (e) => {
@@ -328,7 +261,7 @@ if (installBtn) {
   });
 }
 
-// ---- 11. Service Worker 登録 ----
+// ---- 13. Service Worker 登録 ----
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js")
