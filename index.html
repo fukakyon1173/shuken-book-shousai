@@ -52,13 +52,14 @@
       white-space: nowrap;
     }
     .btn-outline { background: #fff; color: #1976d2; border: 1px solid #1976d2; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
 
-    /* レイアウト（左：検索 / 右：操作） */
     .main { flex: 1; display: flex; min-height: 0; }
 
+    /* 左側：検索＋結果リスト */
     .sidebar {
-      width: 280px;
-      max-width: 40%;
+      width: 320px;
+      max-width: 45%;
       background: #fafafa;
       border-right: 1px solid #ddd;
       padding: 10px;
@@ -69,8 +70,27 @@
     }
 
     .sidebar-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-    .search-row { display: flex; gap: 6px; align-items: center; }
-    #searchInput { flex: 1; padding: 4px 6px; font-size: 13px; }
+
+    .search-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    #searchInput {
+      flex: 1;
+      padding: 4px 6px;
+      font-size: 13px;
+    }
+
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag-btn {
+      border: 1px solid #bbb;
+      background: #fff;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
 
     .search-info { font-size: 11px; color: #555; margin-top: 4px; }
 
@@ -96,18 +116,15 @@
     }
     .result-title { font-weight: 600; margin-bottom: 2px; }
     .result-meta { font-size: 11px; color: #555; margin-bottom: 2px; }
-    .result-snippet { font-size: 11px; color: #333; }
-
-    .quick-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-    .tag-btn {
-      border: 1px solid #bbb;
-      background: #fff;
-      border-radius: 999px;
-      padding: 2px 8px;
+    .result-snippet {
       font-size: 11px;
-      cursor: pointer;
+      color: #333;
+      line-height: 1.4;
+      max-height: 4.2em; /* 約3行分 */
+      overflow: hidden;
     }
 
+    /* 右側：PDF選択＋ページジャンプ */
     .viewer-area {
       flex: 1;
       min-width: 0;
@@ -117,16 +134,32 @@
       gap: 10px;
     }
 
-    .pdf-select { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pdf-select {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
     .pdf-btn-active { background: #0d47a1; }
 
-    .page-jump { display: flex; gap: 6px; align-items: center; }
-    #pageInput { width: 80px; padding: 4px; font-size: 14px; }
+    .page-jump {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    #pageInput {
+      width: 80px;
+      padding: 4px;
+      font-size: 14px;
+    }
 
     .current-file { font-size: 12px; color: #333; }
     .hint { font-size: 11px; color: #666; margin-top: 4px; }
 
-    @media (max-width: 600px) {
+    @media (max-width: 700px) {
       .main { flex-direction: column; }
       .sidebar {
         width: 100%;
@@ -153,10 +186,10 @@
   <div class="main">
     <!-- 左：検索パネル -->
     <aside class="sidebar">
-      <div class="sidebar-title">キーワード検索（全文）</div>
+      <div class="sidebar-title">キーワード全文検索</div>
 
       <div class="search-row">
-        <input type="text" id="searchInput" placeholder="例：スラブ、階段、建具…" />
+        <input type="text" id="searchInput" placeholder="例：スラブ、階段、建具 など" />
         <button id="searchBtn" class="btn" style="font-size:12px;padding:4px 10px;">検索</button>
       </div>
 
@@ -176,19 +209,23 @@
       <ul id="resultList" class="result-list"></ul>
     </aside>
 
-    <!-- 右：ファイル選択＋ページジャンプ -->
+    <!-- 右：PDFファイル選択＆ページジャンプ -->
     <main class="viewer-area">
       <div>
         <div class="sidebar-title">閲覧する PDF を選択</div>
         <div class="pdf-select">
-          <button class="btn pdf-btn pdf-btn-active" data-file="shuken-book-shousai-mokuji.pdf">目次</button>
-          <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou-gaibu.pdf">意匠：外部</button>
-          <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou-naibu.pdf">意匠：内部</button>
-          <button class="btn pdf-btn" data-file="shuken-book-shousai-ishou-tategu.pdf">意匠：建具</button>
-          <button class="btn pdf-btn" data-file="shuken-book-shousai-kouzou.pdf">構造</button>
+          <button class="btn pdf-btn pdf-btn-active"
+                  data-file="shuken-book-shousai-mokuji.pdf">目次</button>
+          <button class="btn pdf-btn"
+                  data-file="shuken-book-shousai-ishou-gaibu.pdf">意匠：外部</button>
+          <button class="btn pdf-btn"
+                  data-file="shuken-book-shousai-ishou-naibu.pdf">意匠：内部</button>
+          <button class="btn pdf-btn"
+                  data-file="shuken-book-shousai-ishou-tategu.pdf">意匠：建具</button>
+          <button class="btn pdf-btn"
+                  data-file="shuken-book-shousai-kouzou.pdf">構造</button>
         </div>
-
-        <div id="currentFileLabel" class="current-file" style="margin-top:4px;">
+        <div id="currentFileLabel" class="current-file">
           現在：目次（shuken-book-shousai-mokuji.pdf）
         </div>
       </div>
@@ -200,10 +237,9 @@
           <input type="number" id="pageInput" min="1" />
           <button id="pageJumpBtn" class="btn">このページを開く</button>
         </div>
-
         <div class="hint">
-          ※ボタンを押すと、選択中の PDF が <strong>同じタブ</strong> で指定ページから開きます。<br>
-          　PDF閲覧後にブラウザの「戻る」または viewer の「戻るボタン」でこの画面に戻れます。
+          ※ボタンを押すと、選択中の PDF が <strong>viewer画面</strong> で指定ページから開きます。<br>
+          　PDF閲覧後は viewer 上部の「← 戻る」ボタンで、この画面に戻れます。
         </div>
       </div>
     </main>

@@ -1,11 +1,11 @@
 // =============================
 // 集研BOOK 詳細図集ビューア
-// ・PDF切替：目次 / 意匠（外部・内部・建具） / 構造
-// ・ページ指定ジャンプ（viewer.html 経由）
-// ・全文検索：左側にヒット件数分、抜粋（数行）を表示
+// ・5つのPDF（目次／意匠 外部・内部・建具／構造）
+// ・左側：全文検索結果（スニペット）一覧
+// ・クリックで viewer.html で該当ページを表示
 // =============================
 
-// ---- 1. 検索対象PDFのリスト ----
+// ---- 1. 検索対象PDFリスト ----
 const PDF_FILES = [
   { file: "shuken-book-shousai-mokuji.pdf",       label: "目次" },
   { file: "shuken-book-shousai-ishou-gaibu.pdf",  label: "意匠：外部" },
@@ -32,11 +32,10 @@ const tagButtons  = document.querySelectorAll(".tag-btn");
 
 const installBtn  = document.getElementById("installBtn");
 
-// ---- 4. PDFを viewer.html 経由で開く ----
+// ---- 4. PDF を viewer.html 経由で開く ----
 function openPdfAtPage(pdfFile, page) {
   if (!page || page <= 0) page = 1;
   const url = `viewer.html?file=${encodeURIComponent(pdfFile)}&page=${page}`;
-  console.log("open:", url);
   window.location.href = url;
 }
 
@@ -119,7 +118,7 @@ async function searchAllPdfsWithSnippets(term) {
     searchInfo.textContent = `「${term}」をPDF全文から検索中…`;
   }
 
-  const maxResults = 50; // 安全のため上限
+  const maxResults = 100; // ヒット数の上限
 
   for (const pdfInfo of PDF_FILES) {
     const pdfDoc = await loadPdfDocument(pdfInfo.file);
@@ -133,7 +132,7 @@ async function searchAllPdfsWithSnippets(term) {
       const lowered = text.toLowerCase();
       const idx = lowered.indexOf(q);
       if (idx !== -1) {
-        const CONTEXT = 40; // 前後何文字持ってくるか
+        const CONTEXT = 40; // 前後の文脈文字数
         const start = Math.max(0, idx - CONTEXT);
         const end   = Math.min(text.length, idx + term.length + CONTEXT);
         const rawSnippet = text.slice(start, end).replace(/\s+/g, " ");
@@ -153,7 +152,7 @@ async function searchAllPdfsWithSnippets(term) {
   return results;
 }
 
-// ---- 10. 検索結果の描画 ----
+// ---- 10. 検索結果の描画（左側リスト） ----
 function renderResults(results, term) {
   if (!resultList || !searchInfo) return;
 
