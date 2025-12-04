@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
@@ -13,11 +14,12 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
+      color: #fff;
+      font-family: system-ui, -apple-system, "ヒラギノ角ゴ ProN", "メイリオ", sans-serif;
     }
 
     .toolbar {
       background: #222;
-      color: #fff;
       padding: 8px 10px;
       display: flex;
       align-items: center;
@@ -25,29 +27,57 @@
       font-size: 13px;
     }
 
-    .back-btn {
+    .back-btn,
+    .nav-btn {
       background: #1976d2;
       border: none;
       color: #fff;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 13px;
-    }
-
-    .file-label {
       font-size: 12px;
-      opacity: 0.8;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    iframe {
+    .back-btn { font-weight: 600; }
+
+    .file-label {
+      font-size: 12px;
+      opacity: 0.9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .page-info {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .viewer-wrap {
       flex: 1;
       width: 100%;
-      border: none;
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
       background: #444;
+    }
+
+    canvas {
+      margin: 8px;
+      background: #666;
+      border-radius: 4px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .loading {
+      font-size: 13px;
+      padding: 10px;
+      text-align: center;
+      width: 100%;
     }
   </style>
 </head>
@@ -56,25 +86,125 @@
   <div class="toolbar">
     <button class="back-btn" onclick="goBack()">← 戻る</button>
     <div class="file-label" id="fileName"></div>
+    <div class="page-info" id="pageInfo"></div>
+    <button class="nav-btn" onclick="prevPage()">前へ</button>
+    <button class="nav-btn" onclick="nextPage()">次へ</button>
   </div>
 
-  <iframe id="pdfFrame"></iframe>
+  <div class="viewer-wrap">
+    <div id="loading" class="loading">読み込み中...</div>
+    <canvas id="pdfCanvas"></canvas>
+  </div>
 
+  <!-- pdf.js 本体 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
     const params = new URLSearchParams(window.location.search);
-    const file = params.get("file");
-    const page = params.get("page") || 1;
+    const fileParam = params.get("file");
+    const pageParam = parseInt(params.get("page") || "1", 10);
 
-    const viewer = document.getElementById("pdfFrame");
-    viewer.src = `${file}#page=${page}`;
+    const fileNameLabel = document.getElementById("fileName");
+    const pageInfoLabel = document.getElementById("pageInfo");
+    const canvas = document.getElementById("pdfCanvas");
+    const loadingEl = document.getElementById("loading");
+    const ctx = canvas.getContext("2d");
 
-    document.getElementById("fileName").textContent =
-      decodeURIComponent(file) + " / p." + page;
+    let pdfDoc = null;
+    let currentPage = isNaN(pageParam) ? 1 : pageParam;
+    let totalPages = 0;
+    let isRendering = false;
+    let pendingPage = null;
 
     function goBack() {
-      // 一覧画面（index.html）に戻る
-      window.location.href = "./";
+      // 履歴があれば戻る、なければトップへ
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "./";
+      }
     }
+
+    async function renderPage(pageNum) {
+      if (!pdfDoc) return;
+      if (isRendering) {
+        pendingPage = pageNum;
+        return;
+      }
+      isRendering = true;
+
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+
+        const viewport = page.getViewport({ scale: 1.5 });
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+
+        loadingEl.style.display = "none";
+
+        await page.render(renderContext).promise;
+
+        currentPage = pageNum;
+        pageInfoLabel.textContent = `p.${currentPage} / ${totalPages}`;
+        fileNameLabel.textContent =
+          decodeURIComponent(fileParam || "") || "PDF";
+
+      } catch (err) {
+        console.error(err);
+        loadingEl.textContent = "PDFの表示に失敗しました。";
+      } finally {
+        isRendering = false;
+        if (pendingPage !== null) {
+          const p = pendingPage;
+          pendingPage = null;
+          renderPage(p);
+        }
+      }
+    }
+
+    function prevPage() {
+      if (!pdfDoc || currentPage <= 1) return;
+      renderPage(currentPage - 1);
+    }
+
+    function nextPage() {
+      if (!pdfDoc || currentPage >= totalPages) return;
+      renderPage(currentPage + 1);
+    }
+
+    async function init() {
+      if (!fileParam) {
+        loadingEl.textContent = "ファイルが指定されていません。";
+        return;
+      }
+
+      try {
+        loadingEl.textContent = "PDFを読み込んでいます...";
+        const loadingTask = pdfjsLib.getDocument(fileParam);
+        pdfDoc = await loadingTask.promise;
+        totalPages = pdfDoc.numPages;
+
+        // 範囲外のページ指定は補正
+        let firstPage = currentPage;
+        if (firstPage < 1) firstPage = 1;
+        if (firstPage > totalPages) firstPage = totalPages;
+
+        renderPage(firstPage);
+      } catch (err) {
+        console.error(err);
+        loadingEl.textContent = "PDFの読み込みに失敗しました。";
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>
