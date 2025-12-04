@@ -3,6 +3,7 @@
 // ・5つのPDF（目次／意匠 外部・内部・建具／構造）
 // ・左側：全文検索結果（スニペット）一覧
 // ・クリックで viewer.html で該当ページを表示
+// ・Service Worker と連携して自動アップデート
 // =============================
 
 // ---- 1. 検索対象PDFリスト ----
@@ -237,10 +238,24 @@ tagButtons.forEach(btn => {
   });
 });
 
-// ---- 12. Service Worker 登録（必要なければこのブロックごと削除OK） ----
+// ---- 12. Service Worker 登録＋自動アップデート対応 ----
 if ("serviceWorker" in navigator) {
+  // 新しい SW がアクティブになったら、自動リロードして最新状態にする
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js")
-      .catch(err => console.error("SW registration failed:", err));
+    navigator.serviceWorker
+      .register("service-worker.js")
+      .then((reg) => {
+        console.log("Service Worker registered:", reg.scope);
+      })
+      .catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
   });
 }
