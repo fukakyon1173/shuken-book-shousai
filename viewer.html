@@ -192,7 +192,6 @@
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
 
-        // 範囲外のページ指定は補正
         let firstPage = currentPage;
         if (firstPage < 1) firstPage = 1;
         if (firstPage > totalPages) firstPage = totalPages;

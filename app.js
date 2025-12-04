@@ -30,8 +30,6 @@ const searchInfo  = document.getElementById("searchInfo");
 const resultList  = document.getElementById("resultList");
 const tagButtons  = document.querySelectorAll(".tag-btn");
 
-const installBtn  = document.getElementById("installBtn");
-
 // ---- 4. PDF を viewer.html 経由で開く ----
 function openPdfAtPage(pdfFile, page) {
   if (!page || page <= 0) page = 1;
@@ -239,28 +237,7 @@ tagButtons.forEach(btn => {
   });
 });
 
-// ---- 12. PWA インストール処理 ----
-let deferredPrompt = null;
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  if (installBtn) {
-    installBtn.style.display = "inline-block";
-  }
-});
-
-if (installBtn) {
-  installBtn.addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    installBtn.style.display = "none";
-  });
-}
-
-// ---- 13. Service Worker 登録 ----
+// ---- 12. Service Worker 登録（必要なければこのブロックごと削除OK） ----
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js")
